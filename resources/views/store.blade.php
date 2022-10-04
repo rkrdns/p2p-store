@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="author" content="Neiber Cardenas" />
-  <meta name="description" content="Neiber Cardenas Store" />
+  <meta name="description" content="{{config('app.name')}}" />
   <meta name="keywords" content="Store">
 
-  <title>Neiber Cardenas Store</title>
+  <title>{{config('app.name')}}</title>
 
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
   <link rel="icon" href="favicon.ico" type="image/x-icon">
@@ -65,13 +65,13 @@
         <div class="row justify-content-center">
           <div class="col-lg-10 col-xl-8">
             <div class="section-title title-01 mb-40">
-              <h2 class="h2-md">Neiber Cardenas Store</h2>
+              <h2 class="h2-md">{{config('app.name')}}</h2>
             </div>
           </div>
         </div>
         <div class="pricing-2-row pc-25">
           <div class="row row-cols-1 row-cols-md-3">
-            <div class="col">
+            <div class="col-md-4 offset-md-4">
               <div class="pricing-2-table bg-white mb-40 wow fadeInUp">
                 <div class="pricing-plan">
                   <div class="row">
@@ -87,55 +87,59 @@
                   <span class="dark-color">2</span>
                   <sup class="validity dark-color"><span>.000.000</span></sup>
                 </div>
-                <a href="#" class="btn btn-sm btn-tra-grey tra-skyblue-hover">Comprar</a>
+                <button type="button" class="btn btn-sm btn-tra-grey tra-skyblue-hover" data-bs-toggle="modal" data-bs-target="#client">Comprar</button>
               </div>
             </div>
-
-            <div class="col">
-              <div class="pricing-2-table bg-white mb-40 wow fadeInUp">
-                <div class="pricing-plan">
-                  <div class="row">
-                    <div class="col">
-                      <img src="images/printer.png" class="img-fluid">
-                    </div>
-                  </div>
-                  <div class="pricing-plan-title">
-                    <h5 class="h5-xs">Printer</h5>
-                    <h6 class="h6-sm bg-lightgrey">Save 10%</h6>
-                  </div>
-                  <sup class="dark-color">$</sup>
-                  <span class="dark-color">5</span>
-                  <sup class="validity dark-color"><span>00.000</span></sup>
+            <div class="toast-container position-static">
+              @if ($errors->any())
+              @foreach ($errors->all() as $error)
+              <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                  <strong class="me-auto">Información incorrecta</strong>
+                  <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
-                <a href="#" class="btn btn-sm btn-tra-grey tra-skyblue-hover">Comprar</a>
+                <div class="toast-body">{{ $error }}</div>
               </div>
+              @endforeach
+              @endif
             </div>
-
-            <div class="col">
-              <div class="pricing-2-table bg-white mb-40 wow fadeInUp">
-                <div class="pricing-plan">
-                  <div class="row">
-                    <div class="col">
-                      <img src="images/laptop.png" class="img-fluid">
-                    </div>
-                  </div>
-                  <div class="pricing-plan-title">
-                    <h5 class="h5-xs">Laptop</h5>
-                    <h6 class="h6-sm bg-lightgrey">Save 25%</h6>
-                  </div>
-                  <sup class="dark-color">$</sup>
-                  <span class="dark-color">3</span>
-                  <sup class="validity dark-color"><span>.500.000</span></sup>
-                </div>
-                <a href="#" class="btn btn-sm btn-tra-grey tra-skyblue-hover">Comprar</a>
-              </div>
-            </div>
-
           </div>
         </div>
       </div>
     </section>
-
+    <div id="client" class="modal" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <form method="post" id="client-form">
+          @csrf
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Ingrese sus datos</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="name" class="form-label">Nombre</label>
+                <input class="form-control" type="text" id="name" name="name" required placeholder="Nombre" value="Neiber">
+              </div>
+              <div class="mb-3">
+                <label for="name" class="form-label">Correo electrónico</label>
+                <input class="form-control" type="email" id="email" name="email" required placeholder="Correo electrónico" value="neiber@neiber.com">
+              </div>
+              <div class="mb-3">
+                <label for="name" class="form-label"># de celular</label>
+                <input class="form-control" type="phone" id="phone" name="phone" required placeholder="# de celular" value="123123123">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Enviar</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
     <footer id="footer-1" class="footer division">
       <div class="container">
         <div class="bottom-footer">
@@ -161,7 +165,7 @@
   <script src="js/jquery.validate.min.js"></script>
   <script src="js/jquery.ajaxchimp.min.js"></script>
   <script src="js/wow.js"></script>
-  <script src="js/custom.js"></script>
+  <script src="js/custom.js" defer></script>
 </body>
 
 </html>
