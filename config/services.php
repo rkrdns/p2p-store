@@ -31,4 +31,8 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'place2pay' => [
+      'login' => env('P2P_LOGIN'),
+      'secret' => env('P2P_SECRET_KEY'),
+    ]
 ];

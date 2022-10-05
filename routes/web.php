@@ -15,4 +15,5 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [OrderController::class, 'index']);
+Route::get('/verify', [OrderController::class, 'verify']);
 Route::post('/', [OrderController::class, 'store']);

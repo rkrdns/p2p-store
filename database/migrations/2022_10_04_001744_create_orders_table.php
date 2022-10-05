@@ -19,6 +19,8 @@ return new class extends Migration
       $table->string('customer_email', 120);
       $table->string('customer_mobile', 40);
       $table->string('status', 20)->default('CREATED');
+      $table->integer('requestId')->nullable();
+      $table->string('processUrl')->nullable();
       $table->timestamps();
     });
   }
