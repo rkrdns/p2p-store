@@ -25,3 +25,6 @@ Route::get('/verify/{ref}', [OrderController::class, 'verify']);
 
 // show current status
 Route::get('/status/{ref}', [OrderController::class, 'status']);
+
+// show orders
+Route::get('/orders', [OrderController::class, 'orders']);

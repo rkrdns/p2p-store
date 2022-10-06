@@ -47,12 +47,11 @@
         </div>
         <div class="wsmainfull menu clearfix">
           <div class="wsmainwp clearfix">
-            <div class="desktoplogo"><a href="demo-1.html" class="logo-black"><img src="{{ asset('images/store.png') }}" alt="header-logo"></a></div>
-            <div class="desktoplogo"><a href="demo-1.html" class="logo-white"><img src="{{ asset('images/store.png') }}" alt="header-logo"></a></div>
+            <div class="desktoplogo"><a href="{{ url('/') }}" class="logo-black"><img src="{{ asset('images/store.png') }}" alt="header-logo"></a></div>
+            <div class="desktoplogo"><a href="{{ url('/') }}" class="logo-white"><img src="{{ asset('images/store.png') }}" alt="header-logo"></a></div>
             <nav class="wsmenu clearfix">
               <ul class="wsmenu-list nav-skyblue-hover">
-                <li class="nl-simple" aria-haspopup="true"><a href="https://www.linkedin.com/in/rebienkrdns/">Linkedin</a></li>
-                <li class="nl-simple" aria-haspopup="true"><a href="https://github.com/rebienkrdns">Github</a></li>
+                <li class="nl-simple" aria-haspopup="true"><a href="{{ url('/orders') }}">Mis órdenes</a></li>
               </ul>
             </nav>
           </div>
