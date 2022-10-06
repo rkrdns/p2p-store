@@ -49,3 +49,7 @@ Proyecto desarrollado con Laravel 9
 - php artisan optimize
 - php artisan migrate
 - php artisan serve, este comando correrá el programa en forma de desarrollo en http://127.0.0.1:8000
+
+## Testing
+- php artisan test
+- php artisan test tests\Unit\StoreTest
