@@ -28,3 +28,6 @@ Route::get('/status/{ref}', [OrderController::class, 'status']);
 
 // show orders
 Route::get('/orders', [OrderController::class, 'orders']);
+
+// regenerate checkout session
+Route::get('/regenerate/{ref}', [OrderController::class, 'regenerate']);

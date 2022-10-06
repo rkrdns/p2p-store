@@ -50,4 +50,13 @@ class OrderController extends Controller
   {
     return view('orders')->with('orders', Order::all());
   }
+  
+  /**
+   * regenerate checkout session
+   */
+  public function regenerate($ref)
+  {
+    $placeToPay = new PlaceToPayProvider($this);
+    return $placeToPay->regenerateSession($ref);
+  }
 }

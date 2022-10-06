@@ -8,5 +8,6 @@ enum StatusEnum:string
     case PAYED = 'Pagado';
     case REJECTED = 'Cancelado/Rechazado';
     case APPROVED = 'Aprobado';
+    case EXPIRED = 'Sesión expirada';
 }
 ?>

@@ -21,12 +21,15 @@
             </div>
             <div class="team-member-data">
               <h5 class="h5-sm">PC</h5>
-              <p class="p-lg">{{ $order->customer_name }}</p>
-              <p class="p-lg tm-social"><a href="#" class="text-secondary">Nombre: {{ $order->customer_email }}</a></p>
-              <p class="p-lg tm-social"><a href="#" class="text-secondary">Correo electrónico: {{ $order->customer_phone }}</a></p>
+              <p class="p-lg">Nombre: {{ $order->customer_name }}</p>
+              <p class="p-lg"><a href="#" class="text-secondary">Correo electrónico: {{ $order->customer_email }}</a></p>
+              <p class="p-lg mb-3"><a href="#" class="text-secondary">Número celular: {{ $order->customer_mobile }}</a></p>
               <p class="p-lg">Estado de pago: <strong>{{ $order->status }}</strong></p>
               @if($order->status==App\Enums\StatusEnum::CREATED->value)
               <a class="btn btn-sm btn-tra-grey tra-skyblue-hover mt-4" href="{{ $order->processUrl }}">Pagar</a>
+              @endif
+              @if($order->status==App\Enums\StatusEnum::EXPIRED->value)
+              <a class="btn btn-sm btn-tra-grey tra-skyblue-hover mt-4" href="{{ url('regenerate') . "/{$order->id}" }}">Reintentar pago</a>
               @endif
             </div>
           </div>

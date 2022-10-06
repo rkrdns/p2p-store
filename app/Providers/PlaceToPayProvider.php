@@ -81,12 +81,12 @@ class PlaceToPayProvider extends ServiceProvider
         'allowPartial' => false
       ],
       'ipAddress' => $request->ip(),
-      'expiration' => $this->getDate()->addDays(30)->format('Y-m-d\TH:i:sP'),
+      'expiration' => $this->getDate()->addMinutes(5)->format('Y-m-d\TH:i:sP'),
       'returnUrl' => url("/verify/{$reference}"),
       'userAgent' => $request->header('User-Agent')
     ];
 
-    $response = Http::post('https://checkout-co.placetopay.dev/api/session', $request);
+    $response = Http::post(config('services.place2pay.url'), $request);
 
     if ($response->status() == 200) {
       $data = $response->json();
@@ -109,7 +109,7 @@ class PlaceToPayProvider extends ServiceProvider
       'auth' => $this->getAuth()
     ];
 
-    $response = Http::post('https://checkout-co.placetopay.dev/api/session/' . $order->requestId, $request);
+    $response = Http::post(config('services.place2pay.url') . '/' . $order->requestId, $request);
 
     if ($response->status() == 200) {
       $data = $response->json();
@@ -118,11 +118,56 @@ class PlaceToPayProvider extends ServiceProvider
         $order->save();
       }
       if ($data['status']['status'] == StatusEnum::REJECTED->name) {
-        $order->status = StatusEnum::REJECTED;
-        $order->save();
+        if ($data['status']['message'] == "La petición ha expirado") {
+          $order->status = StatusEnum::EXPIRED;
+          $order->save();
+        } else {
+          $order->status = StatusEnum::REJECTED;
+          $order->save();
+        }
       }
     }
 
     return Redirect::to(url("/status/{$ref}"));
+  }
+
+  public function regenerateSession($ref)
+  {
+    $order = Order::find($ref);
+
+    $reference = $ref;
+
+    $request = [
+      'locale' => 'es_CO',
+      'auth' => $this->getAuth(),
+      'payment' => [
+        'reference' => $reference,
+        'description' => 'PC',
+        'amount' => [
+          'currency' => 'COP',
+          'total' => 2000000,
+        ],
+        'allowPartial' => false
+      ],
+      'ipAddress' => request()->ip(),
+      'expiration' => $this->getDate()->addMinutes(5)->format('Y-m-d\TH:i:sP'),
+      'returnUrl' => url("/verify/{$reference}"),
+      'userAgent' => request()->header('User-Agent')
+    ];
+
+    $response = Http::post(config('services.place2pay.url'), $request);
+
+    if ($response->status() == 200) {
+      $data = $response->json();
+
+      $order->requestId = $data['requestId'];
+      $order->processUrl = $data['processUrl'];
+      $order->status = StatusEnum::CREATED;
+      $order->save();
+
+      return Redirect::to(url("/status/{$reference}"));
+    } else {
+      return $response->body();
+    }
   }
 }
