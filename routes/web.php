@@ -14,6 +14,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// buy product
 Route::get('/', [OrderController::class, 'index']);
-Route::get('/verify', [OrderController::class, 'verify']);
+
+// generate checkout session
 Route::post('/', [OrderController::class, 'store']);
+
+// verify status update
+Route::get('/verify/{ref}', [OrderController::class, 'verify']);
+
+// show current status
+Route::get('/status/{ref}', [OrderController::class, 'status']);

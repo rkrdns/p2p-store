@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrderRequest;
 use App\Models\Order;
-use Carbon\Carbon;
-use Dnetix\Redirection\PlacetoPay;
+use App\Providers\PlaceToPayProvider;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redirect;
+use App\Enums\StatusEnum;
 
 class OrderController extends Controller
 {
@@ -34,27 +33,17 @@ class OrderController extends Controller
     $order = Order::create([
       'customer_name' => $request->name,
       'customer_email' => $request->email,
-      'customer_mobile' => $request->phone
+      'customer_mobile' => $request->phone,
+      'status' => StatusEnum::CREATED
     ]);
-
-    $date = Carbon::now('America/Bogota');
-
-    $login = config('services.place2pay.login');
-    $secret = config('services.place2pay.secret');
-    $nonce = Str::random(10);
-    $seed = $date->format('Y-m-d\TH:i:sP');
-    $tranKey = base64_encode(sha1($nonce . $seed . $secret, true));
 
     $reference = $order->id;
 
+    $placeToPay = new PlaceToPayProvider($this);
+
     $request = [
       'locale' => 'es_CO',
-      'auth' => [
-        'login' => $login,
-        'tranKey' => $tranKey,
-        'nonce' => base64_encode($nonce),
-        'seed' => $seed
-      ],
+      'auth' => $placeToPay->getAuth(),
       'payment' => [
         'reference' => $reference,
         'description' => 'PC',
@@ -65,8 +54,8 @@ class OrderController extends Controller
         'allowPartial' => false
       ],
       'ipAddress' => $request->ip(),
-      'expiration' => $date->addDays(30)->format('Y-m-d\TH:i:sP'),
-      'returnUrl' => url('/verify'),
+      'expiration' => $placeToPay->getDate()->addDays(30)->format('Y-m-d\TH:i:sP'),
+      'returnUrl' => url("/verify/{$reference}"),
       'userAgent' => $request->header('User-Agent')
     ];
 
@@ -74,17 +63,46 @@ class OrderController extends Controller
 
     if ($response->status() == 200) {
       $data = $response->json();
-      
+
       $order->requestId = $data['requestId'];
       $order->processUrl = $data['processUrl'];
       $order->save();
 
       return Redirect::to($data['processUrl']);
+    }else{
+      return $response->body();
     }
   }
 
-  public function verify(Request $request)
+  public function verify($ref)
   {
-    dd($request->all());
+    $order = Order::findOrFail($ref);
+
+    $placeToPay = new PlaceToPayProvider($this);
+
+    $request = [
+      'auth' => $placeToPay->getAuth()
+    ];
+
+    $response = Http::post('https://checkout-co.placetopay.dev/api/session/' . $order->requestId, $request);
+
+    if ($response->status() == 200) {
+      $data = $response->json();
+      if ($data['status']['status'] == StatusEnum::APPROVED->name) {
+        $order->status = StatusEnum::PAYED;
+        $order->save();
+      }
+      if ($data['status']['status'] == StatusEnum::REJECTED->name) {
+        $order->status = StatusEnum::REJECTED;
+        $order->save();
+      }
+    }
+
+    return Redirect::to(url("/status/{$ref}"));
+  }
+
+  public function status($ref)
+  {
+    return view('status')->with('order', Order::find($ref));
   }
 }
