@@ -53,3 +53,9 @@ Proyecto desarrollado con Laravel 9
 ## Testing
 - php artisan test
 - php artisan test tests\Unit\StoreTest
+
+## Envs
+- P2P_BASE_URL="https://checkout-co.placetopay.dev"
+- P2P_URL="${P2P_BASE_URL}/api/session"
+- P2P_LOGIN='6dd490faf9cb87a9862245da41170ff2'
+- P2P_SECRET_KEY='024h1IlD'

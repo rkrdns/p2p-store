@@ -7,25 +7,28 @@ use App\Http\Requests\StoreOrderRequest;
 use App\Models\Order;
 use Illuminate\Support\ServiceProvider;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Http;
+use Dnetix\Redirection\PlacetoPay;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 
 class PlaceToPayProvider extends ServiceProvider
 {
+  private $baseUrl;
   private $login;
   private $secret;
   private $nonce;
   private $date;
   private $seed;
+  private $delayToExpire;
 
   public function __construct()
   {
+    $this->baseUrl = config('services.place2pay.baseUrl');
     $this->login = config('services.place2pay.login');
     $this->secret = config('services.place2pay.secret');
     $this->nonce = Str::random(10);
     $this->date = Carbon::now('America/Bogota');
-    $this->seed = $this->date->format('Y-m-d\TH:i:sP');
+    $this->delayToExpire = 10;
   }
 
   public function reconfigure($login, $secret, $nonce, $date)
@@ -47,18 +50,29 @@ class PlaceToPayProvider extends ServiceProvider
     ];
   }
 
-  public function getDate()
-  {
-    return $this->date;
-  }
-
   private function getTranKey()
   {
     return base64_encode(sha1($this->nonce . $this->seed . $this->secret, true));
   }
 
+  public function getInstance()
+  {
+    return new PlacetoPay([
+      'login' => $this->login,
+      'tranKey' => $this->secret,
+      'baseUrl' => $this->baseUrl
+    ]);
+  }
+
+  public function getDate()
+  {
+    return $this->date;
+  }
+
   public function generateSession(StoreOrderRequest $request)
   {
+    $placetopay = $this->getInstance();
+
     $order = Order::create([
       'customer_name' => $request->name,
       'customer_email' => $request->email,
@@ -70,7 +84,6 @@ class PlaceToPayProvider extends ServiceProvider
 
     $request = [
       'locale' => 'es_CO',
-      'auth' => $this->getAuth(),
       'payment' => [
         'reference' => $reference,
         'description' => 'PC',
@@ -81,23 +94,20 @@ class PlaceToPayProvider extends ServiceProvider
         'allowPartial' => false
       ],
       'ipAddress' => $request->ip(),
-      'expiration' => $this->getDate()->addMinutes(5)->format('Y-m-d\TH:i:sP'),
+      'expiration' => $this->getDate()->addMinutes($this->delayToExpire)->format('Y-m-d\TH:i:sP'),
       'returnUrl' => url("/verify/{$reference}"),
       'userAgent' => $request->header('User-Agent')
     ];
 
-    $response = Http::post(config('services.place2pay.url'), $request);
-
-    if ($response->status() == 200) {
-      $data = $response->json();
-
-      $order->requestId = $data['requestId'];
-      $order->processUrl = $data['processUrl'];
+    $response = $placetopay->request($request);
+    if ($response->isSuccessful()) {
+      $order->requestId = $response->requestId();
+      $order->processUrl = $response->processUrl();
       $order->save();
 
       return Redirect::to(url("/status/{$reference}"));
     } else {
-      return $response->body();
+      return response()->json($response->status()->message());
     }
   }
 
@@ -105,20 +115,17 @@ class PlaceToPayProvider extends ServiceProvider
   {
     $order = Order::findOrFail($ref);
 
-    $request = [
-      'auth' => $this->getAuth()
-    ];
+    $placetopay = $this->getInstance();
 
-    $response = Http::post(config('services.place2pay.url') . '/' . $order->requestId, $request);
+    $response = $placetopay->query($order->requestId);
 
-    if ($response->status() == 200) {
-      $data = $response->json();
-      if ($data['status']['status'] == StatusEnum::APPROVED->name) {
+    if ($response->isSuccessful()) {
+      if ($response->status()->isApproved()) {
         $order->status = StatusEnum::PAYED;
         $order->save();
       }
-      if ($data['status']['status'] == StatusEnum::REJECTED->name) {
-        if ($data['status']['message'] == "La petición ha expirado") {
+      if ($response->status()->isRejected()) {
+        if ($response->status()->message() == "La petición ha expirado") {
           $order->status = StatusEnum::EXPIRED;
           $order->save();
         } else {
@@ -126,6 +133,8 @@ class PlaceToPayProvider extends ServiceProvider
           $order->save();
         }
       }
+    } else {
+      return response()->json($response->status()->message());
     }
 
     return Redirect::to(url("/status/{$ref}"));
@@ -137,9 +146,10 @@ class PlaceToPayProvider extends ServiceProvider
 
     $reference = $ref;
 
+    $placetopay = $this->getInstance();
+
     $request = [
       'locale' => 'es_CO',
-      'auth' => $this->getAuth(),
       'payment' => [
         'reference' => $reference,
         'description' => 'PC',
@@ -150,24 +160,21 @@ class PlaceToPayProvider extends ServiceProvider
         'allowPartial' => false
       ],
       'ipAddress' => request()->ip(),
-      'expiration' => $this->getDate()->addMinutes(5)->format('Y-m-d\TH:i:sP'),
+      'expiration' => $this->getDate()->addMinutes($this->delayToExpire)->format('Y-m-d\TH:i:sP'),
       'returnUrl' => url("/verify/{$reference}"),
       'userAgent' => request()->header('User-Agent')
     ];
 
-    $response = Http::post(config('services.place2pay.url'), $request);
-
-    if ($response->status() == 200) {
-      $data = $response->json();
-
-      $order->requestId = $data['requestId'];
-      $order->processUrl = $data['processUrl'];
+    $response = $placetopay->request($request);
+    if ($response->isSuccessful()) {
+      $order->requestId = $response->requestId();
+      $order->processUrl = $response->processUrl();
       $order->status = StatusEnum::CREATED;
       $order->save();
 
       return Redirect::to(url("/status/{$reference}"));
     } else {
-      return $response->body();
+      return response()->json($response->status()->message());
     }
   }
 }
